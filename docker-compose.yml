@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  reporting-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reporting-ui
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    networks:
+      - reporting-server_default
+
+networks:
+  reporting-server_default:
+    external: true
