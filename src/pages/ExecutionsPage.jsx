@@ -1,5 +1,73 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
+
+function ImageModal({ screenshots, index, onClose, onPrev, onNext }) {
+  const sc = screenshots[index]
+  const hasPrev = index > 0
+  const hasNext = index < screenshots.length - 1
+
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.key === 'ArrowLeft') { if (hasPrev) onPrev() }
+      else if (e.key === 'ArrowRight') { if (hasNext) onNext() }
+      else if (e.key === 'Escape') { onClose() }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [hasPrev, hasNext, onPrev, onNext, onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
+      {/* Close */}
+      <button
+        className="absolute top-4 right-4 text-white text-3xl font-bold leading-none hover:text-gray-300 transition-colors"
+        onClick={onClose}
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      {/* Prev arrow */}
+      {hasPrev && (
+        <button
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl font-bold leading-none hover:text-gray-300 transition-colors select-none"
+          onClick={(e) => { e.stopPropagation(); onPrev() }}
+          aria-label="Previous screenshot"
+        >
+          ‹
+        </button>
+      )}
+
+      {/* Image */}
+      <div className="flex flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={sc.image_data ?? sc.download_url}
+          alt={sc.step_name ?? 'screenshot'}
+          className="max-h-[85vh] max-w-[85vw] rounded shadow-2xl object-contain"
+        />
+        {sc.step_name && (
+          <span className="text-white/80 text-sm">{sc.step_name}</span>
+        )}
+        <span className="text-white/50 text-xs">{index + 1} / {screenshots.length}</span>
+      </div>
+
+      {/* Next arrow */}
+      {hasNext && (
+        <button
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl font-bold leading-none hover:text-gray-300 transition-colors select-none"
+          onClick={(e) => { e.stopPropagation(); onNext() }}
+          aria-label="Next screenshot"
+        >
+          ›
+        </button>
+      )}
+    </div>
+  )
+}
+
 import { useQuery } from '@tanstack/react-query'
 import { projectsApi, testCasesApi, executionsApi } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
@@ -118,9 +186,6 @@ export default function ExecutionsPage() {
                     Duration
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Step
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Time
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -132,7 +197,8 @@ export default function ExecutionsPage() {
                 {sorted.map((exec) => {
                   const hasDetail =
                     exec.log ||
-                    exec.error_message
+                    exec.error_message ||
+                    (exec.screenshots && exec.screenshots.length > 0)
                   const isExpanded = expandedId === exec.id
 
                   return (
@@ -149,8 +215,23 @@ export default function ExecutionsPage() {
 }
 
 function Fragment({ exec, hasDetail, isExpanded, onToggle }) {
+  const [modalIndex, setModalIndex] = useState(null)
+  const screenshots = exec.screenshots ?? []
+  const openModal = (i) => setModalIndex(i)
+  const closeModal = () => setModalIndex(null)
+  const goPrev = useCallback(() => setModalIndex((i) => Math.max(0, i - 1)), [])
+  const goNext = useCallback(() => setModalIndex((i) => Math.min(screenshots.length - 1, i + 1)), [screenshots.length])
   return (
     <>
+      {modalIndex !== null && (
+        <ImageModal
+          screenshots={screenshots}
+          index={modalIndex}
+          onClose={closeModal}
+          onPrev={goPrev}
+          onNext={goNext}
+        />
+      )}
       <tr className="hover:bg-gray-50 transition-colors">
         <td className="px-6 py-4 text-sm text-gray-400">#{exec.id}</td>
         <td className="px-6 py-4">
@@ -158,9 +239,6 @@ function Fragment({ exec, hasDetail, isExpanded, onToggle }) {
         </td>
         <td className="px-6 py-4 text-sm text-gray-600">
           {exec.duration_ms != null ? `${exec.duration_ms}ms` : '—'}
-        </td>
-        <td className="px-6 py-4 text-sm text-gray-500">
-          {exec.step_name ?? '—'}
         </td>
         <td className="px-6 py-4 text-sm text-gray-500">
           {formatDateTime(exec.reported_at)}
@@ -180,7 +258,7 @@ function Fragment({ exec, hasDetail, isExpanded, onToggle }) {
       {isExpanded && (
         <tr>
           <td
-            colSpan={6}
+            colSpan={5}
             className="px-6 py-4 bg-gray-50 border-t border-gray-100"
           >
             {exec.error_message && (
@@ -198,6 +276,26 @@ function Fragment({ exec, hasDetail, isExpanded, onToggle }) {
               <pre className="text-xs rounded-md bg-gray-900 text-green-400 p-4 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
                 {exec.log}
               </pre>
+            )}
+            {exec.screenshots && exec.screenshots.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Screenshots</p>
+                <div className="flex flex-wrap gap-3">
+                  {exec.screenshots.map((sc, i) => (
+                    <div key={sc.id} className="flex flex-col items-center gap-1">
+                      <img
+                        src={sc.image_data ?? sc.download_url}
+                        alt={sc.step_name ?? 'screenshot'}
+                        className="max-h-48 rounded border border-gray-300 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => openModal(i)}
+                      />
+                      {sc.step_name && (
+                        <span className="text-xs text-gray-500">{sc.step_name}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </td>
         </tr>
