@@ -1,19 +1,16 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import LogModal from '../components/LogModal'
+
 import { useQuery } from '@tanstack/react-query'
 import { projectsApi, testCasesApi, executionsApi } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
-
-function formatDateTime(dateStr) {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleString()
-}
+import { formatDateTime } from '../utils/dateUtils'
 
 export default function ExecutionsPage() {
   const { projectId, caseId } = useParams()
-  const [expandedId, setExpandedId] = useState(null)
 
   const { data: project } = useQuery({
     queryKey: ['projects', projectId],
@@ -58,19 +55,16 @@ export default function ExecutionsPage() {
     <div>
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-4 flex items-center gap-1">
-        <Link to="/projects" className="hover:text-indigo-600 transition-colors">
-          Projects
-        </Link>
-        <span>/</span>
-        <Link
-          to={`/projects/${projectId}`}
-          className="hover:text-indigo-600 transition-colors"
-        >
+        <Link to={`/projects/${projectId}/dashboard`} className="hover:text-indigo-600 transition-colors">
           {project?.name ?? `#${projectId}`}
         </Link>
         <span>/</span>
+        <Link to={`/projects/${projectId}/test-reports`} className="hover:text-indigo-600 transition-colors">
+          Test Reports
+        </Link>
+        <span>/</span>
         <span className="text-gray-800 font-medium">
-          {testCase?.test_name ?? `#${caseId}`}
+          {testCase?.name ?? `#${caseId}`}
         </span>
       </nav>
 
@@ -118,9 +112,6 @@ export default function ExecutionsPage() {
                     Duration
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Step
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Time
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -132,11 +123,11 @@ export default function ExecutionsPage() {
                 {sorted.map((exec) => {
                   const hasDetail =
                     exec.log ||
-                    exec.error_message
-                  const isExpanded = expandedId === exec.id
+                    exec.error_message ||
+                    (exec.screenshots && exec.screenshots.length > 0)
 
                   return (
-                    <Fragment key={exec.id} exec={exec} hasDetail={hasDetail} isExpanded={isExpanded} onToggle={() => setExpandedId(isExpanded ? null : exec.id)} />
+                    <ExecRow key={exec.id} exec={exec} hasDetail={hasDetail} />
                   )
                 })}
               </tbody>
@@ -148,9 +139,23 @@ export default function ExecutionsPage() {
   )
 }
 
-function Fragment({ exec, hasDetail, isExpanded, onToggle }) {
+function ExecRow({ exec, hasDetail }) {
+  const [open, setOpen] = useState(false)
+
   return (
     <>
+      {open && (
+        <LogModal
+          title={`Run #${exec.id}`}
+          subtitle={formatDateTime(exec.reported_at)}
+          status={exec.status}
+          log={exec.log}
+          errorMessage={exec.error_message}
+          screenshots={exec.screenshots ?? []}
+          onClose={() => setOpen(false)}
+        />
+      )}
+
       <tr className="hover:bg-gray-50 transition-colors">
         <td className="px-6 py-4 text-sm text-gray-400">#{exec.id}</td>
         <td className="px-6 py-4">
@@ -160,48 +165,21 @@ function Fragment({ exec, hasDetail, isExpanded, onToggle }) {
           {exec.duration_ms != null ? `${exec.duration_ms}ms` : '—'}
         </td>
         <td className="px-6 py-4 text-sm text-gray-500">
-          {exec.step_name ?? '—'}
-        </td>
-        <td className="px-6 py-4 text-sm text-gray-500">
           {formatDateTime(exec.reported_at)}
         </td>
         <td className="px-6 py-4 text-right">
-          {hasDetail && (
+          {hasDetail ? (
             <button
-              onClick={onToggle}
-              className="text-indigo-600 text-sm hover:text-indigo-800 font-medium transition-colors"
+              onClick={() => setOpen(true)}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 rounded px-2.5 py-1 transition-colors"
             >
-              {isExpanded ? 'Hide ▲' : 'Show ▼'}
+              View Logs
             </button>
+          ) : (
+            <span className="text-xs text-gray-300">—</span>
           )}
         </td>
       </tr>
-
-      {isExpanded && (
-        <tr>
-          <td
-            colSpan={6}
-            className="px-6 py-4 bg-gray-50 border-t border-gray-100"
-          >
-            {exec.error_message && (
-              <p
-                className={`text-sm mb-3 font-medium ${
-                  exec.status === 'failed'
-                    ? 'text-red-700'
-                    : 'text-green-700'
-                }`}
-              >
-                {exec.error_message}
-              </p>
-            )}
-            {exec.log && (
-              <pre className="text-xs rounded-md bg-gray-900 text-green-400 p-4 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">
-                {exec.log}
-              </pre>
-            )}
-          </td>
-        </tr>
-      )}
     </>
   )
 }
