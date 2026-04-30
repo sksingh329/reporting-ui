@@ -14,13 +14,13 @@ function LogToolbar({ position, onScrollToEnd, onScrollToTop, copied, onCopy }) 
   const isTop = position === 'top'
   return (
     <div
-      className={`flex items-center justify-between px-3 py-1.5 bg-gray-50 border border-gray-200 text-xs text-gray-500 select-none ${
+      className={`flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs text-gray-500 dark:text-gray-400 select-none ${
         isTop ? 'rounded-t-md' : 'rounded-b-md border-t-0'
       }`}
     >
       <button
         onClick={isTop ? onScrollToEnd : onScrollToTop}
-        className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-gray-200 hover:text-indigo-600 transition-colors"
+        className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
       >
         <span className="font-bold">{isTop ? '↓' : '↑'}</span>
         {isTop ? 'Jump to End' : 'Jump to Top'}
@@ -28,7 +28,7 @@ function LogToolbar({ position, onScrollToEnd, onScrollToTop, copied, onCopy }) 
       <button
         onClick={onCopy}
         className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-          copied ? 'text-green-600 font-medium' : 'hover:bg-gray-200 hover:text-indigo-600'
+          copied ? 'text-green-600 font-medium' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-indigo-600 dark:hover:text-indigo-400'
         }`}
       >
         {copied ? '✓ Copied!' : '⎘ Copy to clipboard'}
@@ -45,10 +45,11 @@ export default function LogModal({
   log,
   errorMessage,
   screenshots = [],
+  defaultTheme = 'terminal',
   onClose,
 }) {
   const [imgIndex, setImgIndex] = useState(null)
-  const [theme, setTheme] = useState('terminal')
+  const [theme, setTheme] = useState(defaultTheme)
   const [copied, setCopied] = useState(false)
 
   // Auto-size height based on log length, capped at 85vh
@@ -130,7 +131,7 @@ export default function LogModal({
         onClick={() => { if (!draggingRef.current) onClose() }}
       >
         <div
-          className="bg-white rounded-xl shadow-2xl flex flex-col relative overflow-hidden"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col relative overflow-hidden"
           style={{
             width: size.w,
             height: size.h,
@@ -142,9 +143,9 @@ export default function LogModal({
           onClick={e => e.stopPropagation()}
         >
           {/* ── Header ─────────────────────────────────────────────────── */}
-          <div className="flex items-start justify-between px-5 py-3.5 border-b border-gray-100 bg-white shrink-0 gap-4">
+          <div className="flex items-start justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 gap-4">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900 truncate">{title}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{title}</p>
               {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
             </div>
 
@@ -154,7 +155,7 @@ export default function LogModal({
               {/* Theme picker */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-400 hidden sm:inline">Theme</span>
-                <div className="flex items-center gap-1 border border-gray-200 rounded-lg bg-gray-50 px-2 py-1.5">
+                <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 px-2 py-1.5">
                   {THEMES.map(t => (
                     <button
                       key={t.id}
@@ -177,7 +178,7 @@ export default function LogModal({
 
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-700 text-2xl leading-none transition-colors font-light"
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none transition-colors font-light"
                 aria-label="Close"
               >
                 ×
@@ -225,7 +226,7 @@ export default function LogModal({
 
             {screenshots.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                   Screenshots ({screenshots.length})
                 </p>
                 <div className="flex flex-wrap gap-3 pb-2">
@@ -233,7 +234,7 @@ export default function LogModal({
                     <button
                       key={sc.id ?? i}
                       onClick={() => setImgIndex(i)}
-                      className="relative block rounded overflow-hidden border border-gray-200 hover:border-indigo-400 transition-colors cursor-pointer"
+                      className="relative block rounded overflow-hidden border border-gray-200 dark:border-gray-600 hover:border-indigo-400 transition-colors cursor-pointer"
                       title={sc.step_name ?? `Screenshot ${i + 1}`}
                     >
                       <img
@@ -259,7 +260,7 @@ export default function LogModal({
             onMouseDown={onResizeMouseDown}
             title="Drag to resize"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-gray-300">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-gray-300 dark:text-gray-600">
               <circle cx="11" cy="11" r="1.5" fill="currentColor" />
               <circle cx="7"  cy="11" r="1.5" fill="currentColor" />
               <circle cx="11" cy="7"  r="1.5" fill="currentColor" />

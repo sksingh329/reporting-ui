@@ -42,7 +42,7 @@ export default function ProjectsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Projects</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Projects</h1>
 
       {/* Create project form — only shown to users with create permission */}
       {canCreate ? (
@@ -55,7 +55,7 @@ export default function ProjectsPage() {
               setFormError('')
             }}
             placeholder="New project name"
-            className="flex-1 max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="flex-1 max-w-sm rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
           <button
             type="submit"
@@ -83,34 +83,34 @@ export default function ProjectsPage() {
 
       {projects && (
         projects.length === 0 ? (
-          <p className="text-gray-500 text-sm">No projects yet. Create one above.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">No projects yet. Create one above.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
                     ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {projects.map((project) => (
                   <tr
                     key={project.id}
                     onClick={() => navigate(`/projects/${project.id}`)}
-                    className="hover:bg-indigo-50 cursor-pointer transition-colors"
+                    className="hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4 text-sm text-gray-400">
                       #{project.id}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
                       {project.name}
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-indigo-600 hover:text-indigo-800">

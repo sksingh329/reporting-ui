@@ -8,6 +8,7 @@ import TestCasesPage from './pages/TestCasesPage'
 import ExecutionsPage from './pages/ExecutionsPage'
 import TestHistoryPage from './pages/TestHistoryPage'
 import LoginPage from './pages/LoginPage'
+import SettingsPage from './pages/SettingsPage'
 import { useAuth } from './context/AuthContext'
 
 function ProjectRedirect() {
@@ -71,6 +72,7 @@ export default function App() {
           element={<ExecutionsPage />}
         />
         <Route path="/projects/:projectId/history" element={<TestHistoryPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   )

@@ -1,6 +1,6 @@
 export default function LoadingSpinner({ message = 'Loading…' }) {
   return (
-    <div className="flex items-center justify-center py-16 text-gray-400">
+    <div className="flex items-center justify-center py-16 text-gray-400 dark:text-gray-500">
       <svg
         className="animate-spin w-5 h-5 mr-3"
         fill="none"
