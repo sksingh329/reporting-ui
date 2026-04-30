@@ -7,7 +7,8 @@ import { projectsApi, testCasesApi, executionsApi } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
-import { formatDateTime } from '../utils/dateUtils'
+import { formatDateTime, formatDuration } from '../utils/dateUtils'
+import { useSettings } from '../context/SettingsContext'
 
 export default function ExecutionsPage() {
   const { projectId, caseId } = useParams()
@@ -54,33 +55,33 @@ export default function ExecutionsPage() {
   return (
     <div>
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500 mb-4 flex items-center gap-1">
-        <Link to={`/projects/${projectId}/dashboard`} className="hover:text-indigo-600 transition-colors">
+      <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1">
+        <Link to={`/projects/${projectId}/dashboard`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
           {project?.name ?? `#${projectId}`}
         </Link>
         <span>/</span>
-        <Link to={`/projects/${projectId}/test-reports`} className="hover:text-indigo-600 transition-colors">
+        <Link to={`/projects/${projectId}/test-reports`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
           Test Reports
         </Link>
         <span>/</span>
-        <span className="text-gray-800 font-medium">
+        <span className="text-gray-800 dark:text-gray-200 font-medium">
           {testCase?.name ?? `#${caseId}`}
         </span>
       </nav>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Execution History</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Execution History</h1>
 
         {passRate !== null && (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">Pass Rate</span>
-            <div className="w-32 bg-gray-200 rounded-full h-2 overflow-hidden">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Pass Rate</span>
+            <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-2 rounded-full transition-all ${passRateColor}`}
                 style={{ width: `${passRate}%` }}
               />
             </div>
-            <span className="text-sm font-semibold text-gray-700">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               {passRate}%
             </span>
             <span className="text-xs text-gray-400">
@@ -96,30 +97,30 @@ export default function ExecutionsPage() {
 
       {executions && (
         executions.length === 0 ? (
-          <p className="text-gray-500 text-sm">No executions recorded yet.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">No executions recorded yet.</p>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
                     Run
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Duration
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Time
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Logs
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {sorted.map((exec) => {
                   const hasDetail =
                     exec.log ||
@@ -129,6 +130,7 @@ export default function ExecutionsPage() {
                   return (
                     <ExecRow key={exec.id} exec={exec} hasDetail={hasDetail} />
                   )
+                  // note: duration_unit and log_popup_theme read inside ExecRow via useSettings
                 })}
               </tbody>
             </table>
@@ -141,6 +143,7 @@ export default function ExecutionsPage() {
 
 function ExecRow({ exec, hasDetail }) {
   const [open, setOpen] = useState(false)
+  const { log_popup_theme, duration_unit } = useSettings()
 
   return (
     <>
@@ -152,31 +155,32 @@ function ExecRow({ exec, hasDetail }) {
           log={exec.log}
           errorMessage={exec.error_message}
           screenshots={exec.screenshots ?? []}
+          defaultTheme={log_popup_theme}
           onClose={() => setOpen(false)}
         />
       )}
 
-      <tr className="hover:bg-gray-50 transition-colors">
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
         <td className="px-6 py-4 text-sm text-gray-400">#{exec.id}</td>
         <td className="px-6 py-4">
           <StatusBadge status={exec.status} />
         </td>
-        <td className="px-6 py-4 text-sm text-gray-600">
-          {exec.duration_ms != null ? `${exec.duration_ms}ms` : '—'}
+        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+          {formatDuration(exec.duration_ms, duration_unit)}
         </td>
-        <td className="px-6 py-4 text-sm text-gray-500">
+        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
           {formatDateTime(exec.reported_at)}
         </td>
         <td className="px-6 py-4 text-right">
           {hasDetail ? (
             <button
               onClick={() => setOpen(true)}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 rounded px-2.5 py-1 transition-colors"
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 border border-indigo-200 dark:border-indigo-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded px-2.5 py-1 transition-colors"
             >
               View Logs
             </button>
           ) : (
-            <span className="text-xs text-gray-300">—</span>
+            <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
           )}
         </td>
       </tr>

@@ -121,3 +121,8 @@ export const executionsApi = {
       .get(`/api/projects/${projectId}/test-cases/${caseId}/executions/${execId}`)
       .then((r) => r.data),
 }
+
+export const userSettingsApi = {
+  get: () => api.get('/api/users/settings').then((r) => r.data),
+  update: (payload) => api.put('/api/users/settings', payload).then((r) => r.data),
+}

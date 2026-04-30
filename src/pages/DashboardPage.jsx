@@ -8,9 +8,9 @@ import { relativeTime, toDate } from '../utils/dateUtils'
 
 function StatCard({ label, value, valueClass }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-3xl font-bold ${valueClass ?? 'text-gray-900'}`}>{value}</p>
+      <p className={`text-3xl font-bold ${valueClass ?? 'text-gray-900 dark:text-gray-100'}`}>{value}</p>
     </div>
   )
 }
@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Dashboard</h1>
 
       {isLoading && <LoadingSpinner />}
       {error && <ErrorMessage error={error} />}
@@ -69,16 +69,16 @@ export default function DashboardPage() {
 
           {/* Recent failures */}
           {recentFailures.length > 0 && (
-            <div className="rounded-lg border border-red-100 bg-white shadow-sm mb-6">
-              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">Recent Failures</h2>
+            <div className="rounded-lg border border-red-100 dark:border-red-900/50 bg-white dark:bg-gray-800 shadow-sm mb-6">
+              <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Recent Failures</h2>
                 <span className="text-xs text-red-500 font-medium">{recentFailures.length} failing</span>
               </div>
-              <table className="min-w-full divide-y divide-gray-100">
-                <tbody className="divide-y divide-gray-100">
+              <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {recentFailures.slice(0, 5).map((tc) => (
-                    <tr key={tc.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 text-sm font-medium text-gray-900">{tc.name}</td>
+                    <tr key={tc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{tc.name}</td>
                       <td className="px-6 py-3 text-sm text-gray-400">
                         {relativeTime(tc.latest_execution?.reported_at)}
                       </td>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
                       <td className="px-6 py-3 text-right">
                         <Link
                           to={`/projects/${projectId}/test-reports/${tc.id}`}
-                          className="text-indigo-600 text-sm hover:text-indigo-800"
+                          className="text-indigo-600 dark:text-indigo-400 text-sm hover:text-indigo-800 dark:hover:text-indigo-300"
                         >
                           History →
                         </Link>
@@ -102,23 +102,23 @@ export default function DashboardPage() {
 
           {/* All test cases */}
           {testCases.length === 0 ? (
-            <p className="text-gray-500 text-sm">No test cases yet. Start posting results to the API.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No test cases yet. Start posting results to the API.</p>
           ) : (
-            <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">All Test Cases</h2>
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+              <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">All Test Cases</h2>
                 <Link
                   to={`/projects/${projectId}/test-reports`}
-                  className="text-xs text-indigo-600 hover:text-indigo-800"
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
                 >
                   View All →
                 </Link>
               </div>
-              <table className="min-w-full divide-y divide-gray-100">
-                <tbody className="divide-y divide-gray-100">
+              <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {testCases.map((tc) => (
-                    <tr key={tc.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 text-sm font-medium text-gray-900">{tc.name}</td>
+                    <tr key={tc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{tc.name}</td>
                       <td className="px-6 py-3">
                         <StatusBadge status={tc.latest_execution?.status ?? null} />
                       </td>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
                       <td className="px-6 py-3 text-right">
                         <Link
                           to={`/projects/${projectId}/test-reports/${tc.id}`}
-                          className="text-xs text-indigo-600 hover:text-indigo-800"
+                          className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
                         >
                           History →
                         </Link>
