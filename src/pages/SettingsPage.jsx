@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { userSettingsApi, projectsApi } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -79,6 +80,7 @@ const selectCls =
   'w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500'
 
 export default function SettingsPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const { data: settings, isLoading, error } = useQuery({
@@ -141,12 +143,42 @@ export default function SettingsPage() {
     }
   }
 
+  function handleHomeClick() {
+    // If default_project_id is set, go to its dashboard
+    if (settings?.default_project_id) {
+      navigate(`/projects/${settings.default_project_id}/dashboard`)
+    } else {
+      // Otherwise go to projects list
+      navigate('/projects')
+    }
+  }
+
   if (isLoading) return <div className="py-10"><LoadingSpinner /></div>
   if (error) return <ErrorMessage error={error} />
   if (!form) return null
 
   return (
     <div className="max-w-2xl">
+      {/* Header with breadcrumb and home button */}
+      <div className="flex items-center justify-between mb-6">
+        <nav className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+          <Link to="/projects" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            Projects
+          </Link>
+          <span>/</span>
+          <span className="text-gray-700 dark:text-gray-300 font-medium">Settings</span>
+        </nav>
+        <button
+          onClick={handleHomeClick}
+          title="Go to home"
+          className="p-2 text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9M9 5l3-3m0 0l3 3m-3-3v12" />
+          </svg>
+        </button>
+      </div>
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Personalise your Test Reporter experience.</p>
@@ -229,14 +261,14 @@ export default function SettingsPage() {
         </SectionCard>
 
         {/* ── Actions ──────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center justify-between pt-1 gap-4">
           <button
             type="button"
             onClick={handleReset}
             disabled={mutation.isPending}
-            className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-40"
+            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-semibold px-5 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
           >
-            Reset to saved
+            Cancel
           </button>
 
           <div className="flex items-center gap-3">
