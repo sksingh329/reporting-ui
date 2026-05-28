@@ -9,9 +9,11 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import { formatDateTime, formatDuration } from '../utils/dateUtils'
 import { useSettings } from '../context/SettingsContext'
+import { useEnvironment } from '../context/EnvironmentContext'
 
 export default function ExecutionsPage() {
   const { projectId, caseId } = useParams()
+  const { selectedEnv } = useEnvironment()
 
   const { data: project } = useQuery({
     queryKey: ['projects', projectId],
@@ -24,8 +26,8 @@ export default function ExecutionsPage() {
   })
 
   const { data: executions, isLoading, error } = useQuery({
-    queryKey: ['executions', projectId, caseId],
-    queryFn: () => executionsApi.list(projectId, caseId),
+    queryKey: ['executions', projectId, caseId, selectedEnv ?? 'all'],
+    queryFn: () => executionsApi.list(projectId, caseId, selectedEnv),
     refetchInterval: 15_000,
   })
 
@@ -70,7 +72,7 @@ export default function ExecutionsPage() {
       </nav>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Execution History</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Test History</h1>
 
         {passRate !== null && (
           <div className="flex items-center gap-3">
@@ -108,6 +110,9 @@ export default function ExecutionsPage() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Environment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Duration
@@ -164,6 +169,9 @@ function ExecRow({ exec, hasDetail }) {
         <td className="px-6 py-4 text-sm text-gray-400">#{exec.id}</td>
         <td className="px-6 py-4">
           <StatusBadge status={exec.status} />
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+          {exec.environment ?? <span className="text-gray-300 dark:text-gray-600">—</span>}
         </td>
         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
           {formatDuration(exec.duration_ms, duration_unit)}

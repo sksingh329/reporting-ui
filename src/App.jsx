@@ -6,10 +6,13 @@ import ProjectsPage from './pages/ProjectsPage'
 import DashboardPage from './pages/DashboardPage'
 import TestCasesPage from './pages/TestCasesPage'
 import ExecutionsPage from './pages/ExecutionsPage'
-import TestHistoryPage from './pages/TestHistoryPage'
 import LoginPage from './pages/LoginPage'
 import SettingsPage from './pages/SettingsPage'
+import ProfilePage from './pages/ProfilePage'
+import AdminPage from './pages/AdminPage'
+import IntegrationPage from './pages/IntegrationPage'
 import { useAuth } from './context/AuthContext'
+import { EnvironmentProvider } from './context/EnvironmentContext'
 
 function ProjectRedirect() {
   const { projectId } = useParams()
@@ -39,6 +42,14 @@ function RedirectIfAuthed({ children }) {
   return children
 }
 
+// Blocks non-admin access — redirects to /projects silently
+function RequireAdmin({ children }) {
+  const { user, ready } = useAuth()
+  if (!ready) return null
+  if (user?.role !== 'admin') return <Navigate to="/projects" replace />
+  return children
+}
+
 export default function App() {
   const { logout } = useAuth()
 
@@ -50,30 +61,34 @@ export default function App() {
   }, [logout])
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={<RedirectIfAuthed><LoginPage /></RedirectIfAuthed>}
-      />
-      <Route
-        element={
-          <RequireAuth>
-            <Layout />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<Navigate to="/projects" replace />} />
-        <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/projects/:projectId" element={<ProjectRedirect />} />
-        <Route path="/projects/:projectId/dashboard" element={<DashboardPage />} />
-        <Route path="/projects/:projectId/test-reports" element={<TestCasesPage />} />
+    <EnvironmentProvider>
+      <Routes>
         <Route
-          path="/projects/:projectId/test-reports/:caseId"
-          element={<ExecutionsPage />}
+          path="/login"
+          element={<RedirectIfAuthed><LoginPage /></RedirectIfAuthed>}
         />
-        <Route path="/projects/:projectId/history" element={<TestHistoryPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
-    </Routes>
+        <Route
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<Navigate to="/projects" replace />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/:projectId" element={<ProjectRedirect />} />
+          <Route path="/projects/:projectId/dashboard" element={<DashboardPage />} />
+          <Route path="/projects/:projectId/test-reports" element={<TestCasesPage />} />
+          <Route
+            path="/projects/:projectId/test-reports/:caseId"
+            element={<ExecutionsPage />}
+          />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/integration" element={<IntegrationPage />} />
+          <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
+        </Route>
+      </Routes>
+    </EnvironmentProvider>
   )
 }

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Outlet, Link, NavLink, useMatch, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { projectsApi } from '../api/client'
-import { useAuth, useCanCreateProjects } from '../context/AuthContext'
+import { projectsApi, testCasesApi } from '../api/client'
+import { useAuth } from '../context/AuthContext'
+import { useIsAdmin } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
+import { useEnvironment } from '../context/EnvironmentContext'
 
 const NAV_ITEMS = [
   {
@@ -37,8 +39,9 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { logout, user } = useAuth()
-  const canCreate = useCanCreateProjects()
+  const isAdmin = useIsAdmin()
   const { default_project_id } = useSettings()
+  const { selectedEnv, setSelectedEnv } = useEnvironment()
   const matchSub = useMatch('/projects/:projectId/*')
   const matchExact = useMatch('/projects/:projectId')
   const projectId = (matchSub ?? matchExact)?.params?.projectId
@@ -68,6 +71,24 @@ export default function Layout() {
     queryKey: ['projects'],
     queryFn: projectsApi.list,
   })
+
+  // Derive available environments from cached test-cases data (shares query key with pages — no extra calls)
+  const { data: testCasesForEnv } = useQuery({
+    queryKey: ['test-cases', projectId],
+    queryFn: () => testCasesApi.list(projectId),
+    enabled: !!projectId,
+    staleTime: 30_000,
+  })
+
+  const availableEnvs = useMemo(() => {
+    if (!testCasesForEnv) return []
+    const envSet = new Set(
+      testCasesForEnv
+        .map((tc) => tc.latest_execution?.environment)
+        .filter(Boolean)
+    )
+    return Array.from(envSet).sort()
+  }, [testCasesForEnv])
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex relative">
@@ -103,13 +124,13 @@ export default function Layout() {
       >
         {/* Logo + pin toggle */}
         <div className="flex items-center justify-between px-4 py-5 border-b border-gray-100 dark:border-gray-700 min-w-[224px]">
-          <div className="flex items-center gap-2">
+          <Link to="/projects" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <svg className="w-5 h-5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <span className="font-bold text-gray-900 dark:text-white text-base tracking-tight whitespace-nowrap">Test Reporter</span>
-          </div>
+          </Link>
           {/* Pin / unpin button */}
           <button
             onClick={togglePin}
@@ -139,13 +160,30 @@ export default function Layout() {
           </select>
         </div>
 
+        {/* Environment filter — only shown when project selected and envs detected */}
+        {projectId && availableEnvs.length > 0 && (
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 min-w-[224px]">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Environment</p>
+            <select
+              value={selectedEnv ?? ''}
+              onChange={(e) => setSelectedEnv(e.target.value || null)}
+              className="w-full text-sm rounded-md border border-gray-200 dark:border-gray-600 px-2.5 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+            >
+              <option value="">All Environments</option>
+              {availableEnvs.map((env) => (
+                <option key={env} value={env}>{env}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Nav items */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 min-w-[224px]">
           {NAV_ITEMS.map((item) =>
             projectId ? (
               <NavLink
                 key={item.key}
-                to={item.path(projectId)}
+                to={{ pathname: item.path(projectId), search: selectedEnv ? `?env=${encodeURIComponent(selectedEnv)}` : '' }}
                 end={item.end}
                 className={({ isActive }) =>
                   `flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -170,16 +208,36 @@ export default function Layout() {
           )}
         </nav>
 
-        {/* Manage projects + logout */}
+        {/* Bottom actions */}
         <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-700 space-y-2 min-w-[224px]">
-          {canCreate && (
-            <Link
-              to="/projects"
-              className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block"
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `text-xs flex items-center gap-1.5 transition-colors ${
+                  isActive ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+                }`
+              }
             >
-              + Manage Projects
-            </Link>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Admin
+            </NavLink>
           )}
+          <NavLink
+            to="/integration"
+            className={({ isActive }) =>
+              `text-xs flex items-center gap-1.5 transition-colors ${
+                isActive ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+              }`
+            }
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            Integration
+          </NavLink>
           <NavLink
             to="/settings"
             className={({ isActive }) =>
@@ -194,12 +252,36 @@ export default function Layout() {
             </svg>
             Settings
           </NavLink>
+          {user?.username && (
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors cursor-pointer group ${
+                  isActive
+                    ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-1 ring-indigo-200 dark:ring-indigo-700'
+                    : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:ring-1 hover:ring-gray-200 dark:hover:ring-gray-600'
+                }`
+              }
+            >
+              <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/60 flex items-center justify-center shrink-0">
+                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-300 uppercase">
+                  {user.username[0]}
+                </span>
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate" title={user.username}>
+                  {user.username}
+                </span>
+                {user.role && (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 capitalize">{user.role}</span>
+                )}
+              </div>
+              <svg className="w-3 h-3 text-gray-300 dark:text-gray-600 group-hover:text-gray-400 dark:group-hover:text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </NavLink>
+          )}
           <div className="flex items-center justify-between">
-            {user?.username && (
-              <span className="text-xs text-gray-400 truncate max-w-[7rem]" title={user.username}>
-                {user.username}
-              </span>
-            )}
             <button
               onClick={logout}
               className="ml-auto text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"

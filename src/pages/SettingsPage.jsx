@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { userSettingsApi, projectsApi } from '../api/client'
+import { userSettingsApi, projectsApi, testCasesApi } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 
@@ -96,6 +96,22 @@ export default function SettingsPage() {
   const [form, setForm] = useState(null)
   const [saved, setSaved] = useState(false)
 
+  // Derive available environments from the selected default project's test cases
+  const defaultProjectId = form?.default_project_id
+  const { data: testCasesForEnv } = useQuery({
+    queryKey: ['test-cases', defaultProjectId],
+    queryFn: () => testCasesApi.list(defaultProjectId),
+    enabled: !!defaultProjectId,
+    staleTime: 30_000,
+  })
+  const availableEnvs = useMemo(() => {
+    if (!testCasesForEnv) return []
+    const envSet = new Set(
+      testCasesForEnv.map((tc) => tc.latest_execution?.environment).filter(Boolean)
+    )
+    return Array.from(envSet).sort()
+  }, [testCasesForEnv])
+
   // Populate form once settings load
   useEffect(() => {
     if (settings && !form) {
@@ -105,6 +121,7 @@ export default function SettingsPage() {
         timezone: settings.timezone ?? 'UTC',
         default_project_id: settings.default_project_id ?? '',
         duration_unit: settings.duration_unit ?? 'ms',
+        default_environment: settings.default_environment ?? '',
       })
     }
   }, [settings, form])
@@ -127,6 +144,7 @@ export default function SettingsPage() {
     const payload = {
       ...form,
       default_project_id: form.default_project_id ? Number(form.default_project_id) : null,
+      default_environment: form.default_environment || null,
     }
     mutation.mutate(payload)
   }
@@ -139,6 +157,7 @@ export default function SettingsPage() {
         timezone: settings.timezone ?? 'UTC',
         default_project_id: settings.default_project_id ?? '',
         duration_unit: settings.duration_unit ?? 'ms',
+        default_environment: settings.default_environment ?? '',
       })
     }
   }
@@ -257,6 +276,23 @@ export default function SettingsPage() {
                 <option key={p.id} value={String(p.id)}>{p.name}</option>
               ))}
             </select>
+          </Field>
+
+          <Field label="Default environment" hint="Automatically applied as the environment filter when no URL param is set">
+            <select
+              value={form.default_environment}
+              onChange={(e) => set('default_environment', e.target.value)}
+              disabled={!defaultProjectId}
+              className={selectCls}
+            >
+              <option value="">— none —</option>
+              {availableEnvs.map((env) => (
+                <option key={env} value={env}>{env}</option>
+              ))}
+            </select>
+            {!defaultProjectId && (
+              <p className="text-xs text-gray-400 mt-1">Select a default project first to see available environments.</p>
+            )}
           </Field>
         </SectionCard>
 

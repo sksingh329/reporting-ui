@@ -46,3 +46,14 @@ React frontend for a test automation reporting system. Displays projects, test c
 - Shared date formatting always goes through `src/utils/dateUtils.js`
 - Status pill styling lives in `StatusBadge.jsx`
 - `package-lock.json` must be committed — Dockerfile uses `npm ci`
+
+## API Schema
+Full OpenAPI 3.x schema: `schema/openapi.json`
+
+Key schemas to know:
+- **TestCaseSummaryOut** — used by `GET /api/projects/{project_id}/test-cases`; has `id`, `name`, `latest_status`, `total_executions`, `failed_count`, `latest_execution`
+- **TestExecutionOut** — has `id`, `status`, `duration_ms`, `error_message`, `reported_at`, `log`, `screenshots[]`, `submitted_by`
+- **ScreenshotOut** — has `id`, `storage_key`, `step_name`, `taken_at`, `is_failure_screenshot`, `image_data`
+- **UserSettingsOut** — has `app_theme`, `log_popup_theme`, `timezone`, `default_project_id`, `duration_unit`
+
+All endpoints require `Authorization: Bearer <token>` (JWT or service token).
