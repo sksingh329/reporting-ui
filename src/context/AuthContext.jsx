@@ -82,3 +82,8 @@ export function useCanCreateProjects() {
   // Fall back to role-based check
   return user.role === 'admin' || user.role === 'owner' || user.is_admin === true
 }
+
+export function useIsAdmin() {
+  const { user } = useAuth()
+  return user?.role === 'admin'
+}

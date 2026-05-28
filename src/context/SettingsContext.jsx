@@ -12,6 +12,7 @@ const DEFAULTS = {
   timezone: 'UTC',
   default_project_id: null,
   duration_unit: 'ms',
+  default_environment: null,
 }
 
 export function SettingsProvider({ children }) {
