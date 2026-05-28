@@ -6,12 +6,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: reporting-ui
+    env_file: .env
     ports:
-      - "3000:80"
+      - "${HOST_PORT}:80"
     restart: unless-stopped
     networks:
-      - reporting-server_default
+      - backend
 
 networks:
-  reporting-server_default:
+  backend:
+    name: ${BACKEND_NETWORK_NAME}
     external: true
